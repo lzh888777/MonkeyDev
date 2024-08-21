@@ -24,7 +24,7 @@
 				<key>CLANG_ENABLE_OBJC_ARC</key>
 				<string>YES</string>
 				<key>INSTALL_PATH</key>
-				<string>var/jb/Library/MobileSubstrate/DynamicLibraries</string>
+				<string>/var/jb/Library/MobileSubstrate/DynamicLibraries</string>
 				<key>DYLIB_CURRENT_VERSION</key>
 				<string>1</string>
 				<key>DYLIB_COMPATIBILITY_VERSION</key>
@@ -61,6 +61,16 @@
 				<dict>
 					<key>ShellScript</key>
 					<string>/opt/MonkeyDev/bin/md --xcbp</string>
+					<key>ShellPath</key>
+					<string>/bin/sh</string>
+					<key>RunOnlyForDeploymentPostprocessing</key>
+					<false/>
+					<key>Class</key>
+					<string>ShellScript</string>
+				</dict>
+				<dict>
+					<key>ShellScript</key>
+					<string>install_name_tool -change /Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate /var/jb/Library/Frameworks/CydiaSubstrate.framework/CydiaSubstrate ${TARGET_BUILD_DIR}/${EXECUTABLE_PATH}</string>
 					<key>ShellPath</key>
 					<string>/bin/sh</string>
 					<key>RunOnlyForDeploymentPostprocessing</key>
