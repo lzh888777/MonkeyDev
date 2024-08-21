@@ -52,7 +52,8 @@ function checkApp(){
 	# remove Plugin an Watch
 	rm -rf "${TARGET_APP_PATH}/PlugIns" || true
 	rm -rf "${TARGET_APP_PATH}/Watch" || true
-
+	rm -rf "${TARGET_APP_PATH}/com.apple.WatchPlaceholder" || true
+	
 	/usr/libexec/PlistBuddy -c 'Delete UISupportedDevices' "${TARGET_APP_PATH}/Info.plist" 2>/dev/null
 
 	VERIFY_RESULT=`export MONKEYDEV_CLASS_DUMP=${MONKEYDEV_CLASS_DUMP};MONKEYDEV_RESTORE_SYMBOL=${MONKEYDEV_RESTORE_SYMBOL};"$MONKEYPARSER" verify -t "${TARGET_APP_PATH}" -o "${SRCROOT}/${TARGET_NAME}"`
@@ -66,9 +67,10 @@ function checkApp(){
 
 function pack(){
 	TARGET_INFO_PLIST=${SRCROOT}/${TARGET_NAME}/Info.plist
+	echo "LHDEBUG---TARGET_INFO_PLIST "$TARGET_INFO_PLIST
 	# environment
 	CURRENT_EXECUTABLE=$(/usr/libexec/PlistBuddy -c "Print CFBundleExecutable" "${TARGET_INFO_PLIST}" 2>/dev/null)
-
+	echo "LHDEBUG---CURRENT_EXECUTABLE "$CURRENT_EXECUTABLE
 	# create tmp dir
 	rm -rf "${TEMP_PATH}" || true
 	mkdir -p "${TEMP_PATH}" || true
@@ -151,6 +153,7 @@ function pack(){
 		fi
 		if isRelease; then
 			rm -rf "${TARGET_APP_FRAMEWORKS_PATH}"/RevealServer.framework
+			rm -rf "${TARGET_APP_FRAMEWORKS_PATH}"/LookinServer.framework
 			rm -rf "${TARGET_APP_FRAMEWORKS_PATH}"/libcycript*
 		fi
 	fi
@@ -171,11 +174,24 @@ function pack(){
 	APP_BINARY=`plutil -convert xml1 -o - ${BUILD_APP_PATH}/Info.plist | grep -A1 Exec | tail -n1 | cut -f2 -d\> | cut -f1 -d\<`
 
 	if [[ ${MONKEYDEV_INSERT_DYLIB} == "YES" ]];then
+		#LHDEBUG---下面是注入默认dylib的动态库
 		"$MONKEYPARSER" install -c load -p "@executable_path/Frameworks/lib""${TARGET_NAME}""Dylib.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
 		"$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
 
+		# LHDEBUG---下面是新增注入ZZemeColorTools的动态库
+		# "$MONKEYPARSER" install -c load -p "@rpath/ZZemeColorTools.framework/ZZemeColorTools" -t "${BUILT_PRODUCTS_DIR}/lib""${TARGET_NAME}""Dylib.dylib"
+		# "$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
+
+
+		# LHDEBUG---下面是新增注入LHBateCYLogos的动态库
+		# "$MONKEYPARSER" install -c load -p "@executable_path/Frameworks/LHBateCYLogos.dylib" -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		# "$MONKEYPARSER" unrestrict -t "${BUILD_APP_PATH}/${APP_BINARY}"
+		
+
 		chmod +x "${BUILD_APP_PATH}/${APP_BINARY}"
+		# chmod +x "${BUILD_APP_PATH}/${APP_BINARY}"
 	fi
+
 
 	# Update Info.plist for Target App
 	if [[ "${TARGET_DISPLAY_NAME}" != "" ]]; then
@@ -201,8 +217,14 @@ function pack(){
 	/usr/libexec/PlistBuddy -c "Delete :CFBundleIconFiles" "${TARGET_INFO_PLIST}"
 	/usr/libexec/PlistBuddy -c "Add :CFBundleIconFiles array" "${TARGET_INFO_PLIST}"
 	/usr/libexec/PlistBuddy -c "Add :CFBundleIconFiles: string ${TARGET_NAME}/icon.png" "${TARGET_INFO_PLIST}"
+	# # LHDEBUG 删除指定icon的操作
+	# /usr/libexec/PlistBuddy -c "Add :CFBundleIconFiles: string icon@2x.png" "${TARGET_INFO_PLIST}"
+	# /usr/libexec/PlistBuddy -c "Add :CFBundleIconFiles: string icon@3x.png" "${TARGET_INFO_PLIST}"
+	# /usr/libexec/PlistBuddy -c "Add :CFBundleIconFiles: string icon.png" "${TARGET_INFO_PLIST}"
+
 
 	cp -rf "${TARGET_INFO_PLIST}" "${BUILD_APP_PATH}/Info.plist"
+
 
 	#cocoapods
 	if [[ -f "${SRCROOT}/Pods/Target Support Files/Pods-""${TARGET_NAME}""Dylib/Pods-""${TARGET_NAME}""Dylib-frameworks.sh" ]]; then
@@ -224,6 +246,7 @@ function pack(){
 
 if [[ "$1" == "codesign" ]]; then
 	${MONKEYPARSER} codesign -i "${EXPANDED_CODE_SIGN_IDENTITY}" -t "${BUILD_APP_PATH}"
+	echo "LHDEBUG---CODE_SIGN ${EXPANDED_CODE_SIGN_IDENTITY}"
 	if [[ ${MONKEYDEV_INSERT_DYLIB} == "NO" ]];then
 		rm -rf "${BUILD_APP_PATH}/Frameworks/lib${TARGET_NAME}Dylib.dylib"
 	fi

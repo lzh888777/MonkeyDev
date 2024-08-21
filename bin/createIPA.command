@@ -35,3 +35,18 @@ run "rm -rf ${DIR}/Payload"
 echo "==================MonkeyDev(done)=================="
 
 exit;
+
+
+# down is right
+echo "==================MonkeyDev(create ipa file...)=================="
+
+run "rm -rf Target.ipa Payload"
+run "mkdir Payload"
+
+APP=$(find . -type d | grep ".app$" | head -n 1)
+
+run "cp -rf ${APP} Payload"
+run_at . "zip -qr Target.ipa Payload"
+run "rm -rf Payload"
+
+echo "==================MonkeyDev(done)=================="
