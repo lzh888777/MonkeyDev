@@ -68,6 +68,7 @@
 				<string>JavaScriptCore</string>
 				<string>Foundation</string>
 				<string>UIKit</string>
+				<string>Cycript</string>
 			</array>
 		</dict>
 	</array>

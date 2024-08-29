@@ -91,7 +91,7 @@ NSString * const CYErrorMessageKey = @"CYErrorMessageKey";
 -(void)check{
     NSString* ip = [self getIPAddress];
     if(ip != nil){
-        printf("\nDownload cycript(https://cydia.saurik.com/api/latest/3) then run: ./cycript -r %s:%d\n\n", [ip UTF8String], PORT);
+        printf("\nDownload cycript(https://cydia.saurik.com/api/latest/3) then run: cycript -r %s:%d\n\n", [ip UTF8String], PORT);
     }else{
         printf("\nPlease connect wifi before using cycript!\n\n");
     }
