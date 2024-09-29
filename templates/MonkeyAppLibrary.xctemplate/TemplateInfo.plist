@@ -244,6 +244,7 @@
 		<string>Trace/selectortramps.mac</string>
 		<string>Tools/LLDBTools.h</string>
 		<string>Tools/LLDBTools.mm</string>
+		<string>Tools/libsqlite3.tbd</string>
 		<string>___PACKAGENAME___-Prefix.pch:objC:importFoundation</string>
 		<string>___PACKAGENAME___-Prefix.pch:objC:importTheosPrefix</string>
 		<string>AntiAntiDebug/AntiAntiDebug.m</string>
@@ -447,6 +448,15 @@
 		<dict>
 			<key>Path</key>
 			<string>Tools/LLDBTools.mm</string>
+			<key>Group</key>
+			<array>
+				<string>Tools</string>
+			</array>
+		</dict>
+		<key>Tools/libsqlite3.tbd</key>
+		<dict>
+			<key>Path</key>
+			<string>Tools/libsqlite3.tbd</string>
 			<key>Group</key>
 			<array>
 				<string>Tools</string>

@@ -114,7 +114,7 @@
 				<key>MONKEYDEV_CLASS_DUMP</key>
 				<string>YES</string>
 				<key>MONKEYDEV_RESTORE_SYMBOL</key>
-				<string>NO</string>
+				<string>YES</string>
 				<key>PODS_ROOT</key>
 				<string>${SRCROOT}/Pods</string>
 				<key>ENABLE_BITCODE</key>
