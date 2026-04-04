@@ -293,10 +293,11 @@ function signCode() # args: executableToSign, identityToSignWith
 	
 	requireFile "$executableToSign" false
 		
-	if [[ "$identityToSignWith" == "" || "$identityToSignWith" == "-" ]]; then
+	# 强制使用ldid，因为codesign会导致Dopamine的无根越狱失效
+	# if [[ "$identityToSignWith" == "" || "$identityToSignWith" == "-" ]]; then
 
 		# use ldid #
-		cmdBin="ldid"
+		cmdBin="/opt/homebrew/bin/ldid"
 		
 		if [[ "$entitlements" == "" ]]; then
 			cmdArg=("-S")
@@ -304,22 +305,22 @@ function signCode() # args: executableToSign, identityToSignWith
 			cmdArg=("-S${PROJECT_DIR}/${entitlements}")
 		fi
 
-	else
-		# use codesign #
-		codesignAllocatePath=`xcodebuild -sdk iphoneos -find codesign_allocate` || \
-			panic $? "Failed to get codesign_allocate path"
+	# else
+	# 	# use codesign #
+	# 	codesignAllocatePath=`xcodebuild -sdk iphoneos -find codesign_allocate` || \
+	# 		panic $? "Failed to get codesign_allocate path"
 
-		export CODESIGN_ALLOCATE="$codesignAllocatePath"
+	# 	export CODESIGN_ALLOCATE="$codesignAllocatePath"
 
-		cmdBin=`xcodebuild -sdk iphoneos -find codesign` || \
-			panic $? "Failed to get codesign path"
+	# 	cmdBin=`xcodebuild -sdk iphoneos -find codesign` || \
+	# 		panic $? "Failed to get codesign path"
 
-		if [[ "$entitlements" == "" ]]; then
-			cmdArg=("-fs" "$identityToSignWith")
-		else
-			cmdArg=("-fs" "$identityToSignWith" "--entitlements" "${PROJECT_DIR}/${entitlements}")
-		fi		
-	fi
+	# 	if [[ "$entitlements" == "" ]]; then
+	# 		cmdArg=("-fs" "$identityToSignWith")
+	# 	else
+	# 		cmdArg=("-fs" "$identityToSignWith" "--entitlements" "${PROJECT_DIR}/${entitlements}")
+	# 	fi		
+	# fi
 
 	echo -n "Signing $executableToSign with `basename \"$cmdBin\"`... "
 	
@@ -456,7 +457,7 @@ function createDebianPackage() # args: sourceDir, packageName [, outputDir]
 	
 	local packageFile="${outputDir:-.}/$packageName.deb"
 	
-	echo -n "Building package $packageFileName... "
+	echo -n "Building package $packageName... "
 
 	local tempDir="`getTempDir`"
 	
@@ -466,8 +467,36 @@ function createDebianPackage() # args: sourceDir, packageName [, outputDir]
 	echo "2.0" > "$tempDir/debian-binary" || \
 		panic $? "Failed to create debian-binary file"
 	
-	ar -rc "$packageFile" "$tempDir/debian-binary" "$tempDir/control.tar.gz" "$tempDir/data.tar.gz" || \
-		panic $? "Failed to create Debian archive"
+	# 使用 Python 构建符合 Debian 规范的 ar 格式
+	# macOS 自带的 ar 命令是为 Mach-O 设计的，不能正确生成 Debian 包格式
+	python3 - "$packageFile" "$tempDir/debian-binary" "$tempDir/control.tar.gz" "$tempDir/data.tar.gz" <<'PYEOF'
+import sys, os, struct
+
+def ar_header(filename, filesize):
+    name = os.path.basename(filename)
+    # ar 格式: 每个文件头 60 字节
+    # 文件名(16) + 修改时间(12) + uid(6) + gid(6) + mode(8) + 大小(10) + 结束标记(2)
+    header = '{:<16}{:<12}{:<6}{:<6}{:<8}{:<10}`\n'.format(
+        name, '0', '0', '0', '100644', filesize
+    )
+    return header.encode('ascii')
+
+output_file = sys.argv[1]
+input_files = sys.argv[2:]
+
+with open(output_file, 'wb') as out:
+    # ar 全局魔术头
+    out.write(b'!<arch>\n')
+    for filepath in input_files:
+        filesize = os.path.getsize(filepath)
+        out.write(ar_header(filepath, filesize))
+        with open(filepath, 'rb') as f:
+            out.write(f.read())
+        # ar 要求每个文件内容按 2 字节对齐
+        if filesize % 2 != 0:
+            out.write(b'\n')
+PYEOF
+	[ $? -eq 0 ] || panic $? "Failed to create Debian archive"
 
 	echo "Done."
 }
